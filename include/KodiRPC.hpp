@@ -1,12 +1,6 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
  * File:   KodiRPC.hpp
- * Author: Ceco
+ * Author: proconsule
  *
  * Created on 21 ottobre 2019, 10.27
  */
@@ -22,9 +16,9 @@ enum MSGIDS{
     INPUTKEY = 1000,
     VOLUME = 101,
     VERSION = 102
-    
-            
-    
+
+
+
 };
 
 enum InputKeys{
@@ -39,7 +33,7 @@ enum InputKeys{
     KODI_KEYHOME = 9,
     KODI_KEYOSD = 10,
     KODI_KEYSHOWCODEC = 11
-    
+
 };
 
 
@@ -48,25 +42,25 @@ typedef struct{
     int minor;
     char *revision;
     char *tag;
-    
+
 }kodiversion_struct;
 
 
 class CKodiRPC{
 public:
     void Init();
-    
+
     //json_object * CreateMessageId(int id);
     char * CreateMessageInputKey(InputKeys Key);
-    
-    
+
+
     int volume;
     kodiversion_struct kodiversion;
-    
+
     void ParseJson(char *buffer);
-    
-    
-    
+
+
+
 };
 
 

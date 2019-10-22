@@ -2,8 +2,8 @@
 //  Parameters.hpp
 //  kodiclient-3ds
 //
-//  Created by Ceco on 20/10/2019.
-//  Copyright © 2019 Ceco. All rights reserved.
+//  Created by proconsule on 20/10/2019.
+//  Copyright © 2019 proconsule. All rights reserved.
 //
 
 #ifndef Parameters_hpp
