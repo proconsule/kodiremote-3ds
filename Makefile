@@ -46,8 +46,8 @@ GFXBUILD	:=	$(BUILD)
 #---------------------------------------------------------------------------------
 
 APP_TITLE           :=	KodiRemote-3DS
-APP_DESCRIPTION     :=	Kodi Remote Controller 3DS (ALPHA Version)
-APP_AUTHOR          :=	Ceco
+APP_DESCRIPTION     :=	Kodi Remote Controller (N)3DS (ALPHA Version)
+APP_AUTHOR          :=	proconsule
 
 ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 
