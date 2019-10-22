@@ -1,13 +1,11 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+//  Created by proconsule on 20/10/2019.
+//  Copyright © 2019 proconsule. All rights reserved.
+//
 
 #include "KodiRPC.hpp"
 
 void CKodiRPC::Init(){
-    
+
 }
 
 struct json_object * find_something(struct json_object *jobj, const char *key) {
@@ -20,8 +18,8 @@ struct json_object * find_something(struct json_object *jobj, const char *key) {
 
 
 void CKodiRPC::ParseJson(char* buffer){
-    
-    struct json_object *jobj; 
+
+    struct json_object *jobj;
     jobj = json_tokener_parse(buffer);
     /*
     printf("jobj from str:\n---\n%s\n---\n", json_object_to_json_string_ext(jobj, JSON_C_TO_STRING_SPACED | JSON_C_TO_STRING_PRETTY));
@@ -48,23 +46,23 @@ void CKodiRPC::ParseJson(char* buffer){
              struct json_object *minorobj =  find_something(verobj,"minor");
              struct json_object *revisionobj =  find_something(verobj,"revision");
              struct json_object *tagobj =  find_something(verobj,"tag");
-             
+
              kodiversion.major = json_object_get_int(majorobj);
              kodiversion.minor = json_object_get_int(minorobj);
              kodiversion.revision = (char *)json_object_get_string(revisionobj);
              kodiversion.tag = (char *)json_object_get_string(tagobj);
              printf("Kodi Version %d.%d %s %s\r\n",kodiversion.major,kodiversion.minor,kodiversion.revision,kodiversion.tag);
          }
-        
-        
+
+
     }
-    
+
     if(type == json_type_string){
         char *stringid = (char *)json_object_get_string(idobj);
          printf("STRING ID: %s\r\n",stringid);
     }
-            
-    
+
+
 }
 
 char * CKodiRPC::CreateMessageInputKey(InputKeys Key){
@@ -89,7 +87,7 @@ char * CKodiRPC::CreateMessageInputKey(InputKeys Key){
     }
     if(Key == KODI_KEYSELECT){
         jstringkey = json_object_new_string("Input.Select");
-    }    
+    }
     if(Key == KODI_KEYCONTEXT){
         jstringkey = json_object_new_string("Input.ContextMenu");
     }
@@ -105,17 +103,17 @@ char * CKodiRPC::CreateMessageInputKey(InputKeys Key){
     if(Key == KODI_KEYSHOWCODEC){
         jstringkey = json_object_new_string("Input.ShowCodec");
     }
-    
-    
-    
-    
+
+
+
+
     json_object_object_add(jobj,"jsonrpc", jstring);
     json_object_object_add(jobj,"id", jid);
     json_object_object_add(jobj,"method", jstringkey);
-    
-    
-    
+
+
+
     return (char *)json_object_to_json_string(jobj);
-    
-    
+
+
 }
