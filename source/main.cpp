@@ -231,7 +231,7 @@ void startMenu(){
 void HelpMenu(){
 
     printf("\x1b[28;1HD-Pad to move, A = Ok , B = Back\n");
-    printf("\x1b[29;1HStart to exit!\n");
+    printf("\x1b[29;1HStart to go back into main menu!\n");
 
 
 }
@@ -365,6 +365,9 @@ int main(){
             char *myout = Menu.PrintVideoLibrary();
             printf(myout);
             free(myout);
+        }
+        else if(Menu.currmenuid == REMOTEMENU){
+            HelpMenu();
         }
         else
         {
