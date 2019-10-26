@@ -94,7 +94,7 @@ class CKodiRPC{
 public:
     void Init();
 
-    //json_object * CreateMessageId(int id);
+
     char * CreateMessageInputKey(InputKeys Key);
 
 

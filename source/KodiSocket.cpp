@@ -30,7 +30,7 @@ void *CKodiSocket::SockThread(void *arg){
      sock = socket(AF_INET , SOCK_STREAM , 0);
      if (sock == -1)
      {
-         //printf("Could not create socket");
+         
      }
 
 
@@ -47,8 +47,7 @@ void *CKodiSocket::SockThread(void *arg){
      fcntl(sock, F_SETFL, fcntl(sock, F_GETFL, 0) | O_NONBLOCK);
 
      Parameters->connected = 1;
-     //consoleSelect(&Parameters->topScreen);
-     //printf("Connected\r\n");
+    
 
     char vercmd[] = "{\"jsonrpc\": \"2.0\", \"method\": \"Application.GetProperties\", \"params\": {\"properties\": [\"version\"]}, \"id\": 102}\r\n";
 
@@ -63,13 +62,13 @@ void *CKodiSocket::SockThread(void *arg){
              mysize += n_bytes;
              if(n_bytes <10){
 
-//              consoleSelect(&Parameters->topScreen);
+
                 server_msg = (char *)realloc(server_msg,mysize);
                 memcpy(&server_msg[mysize-n_bytes],lastbuf,n_bytes);
                 Parameters->KodiRPC->ParseJson(server_msg);
-                //printf("%s  AAAA\n\n",server_msg);
+               
                 mysize = 0;
-                //free(server_msg);
+ 
 
              }
              else

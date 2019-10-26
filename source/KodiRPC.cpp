@@ -391,19 +391,10 @@ bool CKodiRPC::ParseGetMovies(char *buffer){
 
 
 
-            /*
-            struct json_object *posterobj;
-            json_object_object_get_ex(artobj, "set.poster", &posterobj);
-            char * posterstring = (char *)json_object_get_string(posterobj);
-            std::string tmpstr(posterstring);
-            */
-
-
+            
 
             kodivideolib_struct kodimovie;
-            //kodimovie.posterurl = urlDecode(tmpstr);
-            //kodimovie.posterurl.erase(0,8);
-            //kodimovie.posterurl.erase(kodimovie.posterurl.end()-1,kodimovie.posterurl.end());
+          
             char *labelstring = (char *)json_object_get_string(labelobj);
             char *plotstring = (char *)json_object_get_string(plotobj);
             char *thumbstring = (char *)json_object_get_string(thumbobj);
@@ -463,9 +454,7 @@ void CKodiRPC::ParseJson(char* buffer){
 
     struct json_object *jobj;
     jobj = json_tokener_parse(buffer);
-    /*
-    printf("jobj from str:\n---\n%s\n---\n", json_object_to_json_string_ext(jobj, JSON_C_TO_STRING_SPACED | JSON_C_TO_STRING_PRETTY));
-    */
+   
     struct json_object *idobj =  find_something(jobj,"id");
     if(idobj == NULL){
         return;
@@ -474,11 +463,11 @@ void CKodiRPC::ParseJson(char* buffer){
     type = json_object_get_type(idobj);
     if(type == json_type_int){
         int id =  json_object_get_int(idobj);
-        //printf("INT ID: %d\r\n",id);
+       
         if(id == VOLUME){
             struct json_object *resobj =  find_something(jobj,"result");
             struct json_object *volobj =  find_something(resobj,"volume");
-            //printf("VOL: %d\r\n",json_object_get_int(volobj));
+           
             volume = json_object_get_int(volobj);
         }
          if(id == VERSION){

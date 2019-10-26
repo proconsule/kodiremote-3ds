@@ -68,7 +68,6 @@ typedef struct{
 void printStartMenu(menu_struct *menu){
 
 	if(menu->currmenuid == 0){
-		//printf("\x1b[2J");
 		printf("\x1b[1;7HKodi Connect Menu\n");
 		printf("\x1b[2;3HKodi Address: %s\n",Parameters.kodiaddress);
 		printf("\x1b[3;3HKodi port: %d\n",Parameters.kodiport);
@@ -103,8 +102,6 @@ void startMenu(){
 	{
 		static SwkbdState swkbd;
 		static char mybuf[60];
-		//static SwkbdStatusData swkbdStatus;
-		//static SwkbdLearningData swkbdLearning;
 		SwkbdButton button = SWKBD_BUTTON_NONE;
 		bool diditip = false;
         bool diditwsport = false;
@@ -125,7 +122,7 @@ void startMenu(){
 				swkbdSetHintText(&swkbd, "Enter Kodi Address");
 				swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
 				swkbdSetButton(&swkbd, SWKBD_BUTTON_MIDDLE, "OK", true);
-				//swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
+				
 				button = swkbdInputText(&swkbd, mybuf, sizeof(mybuf));
 			}
             if(menu.menupos == 1){
@@ -188,7 +185,7 @@ void startMenu(){
 			} else{
 
 			}
-				//printf("swkbd event: %d\n", swkbdGetResult(&swkbd));
+				
 		}
         if (diditwsport)
         {
@@ -203,7 +200,7 @@ void startMenu(){
             } else{
 
             }
-                //printf("swkbd event: %d\n", swkbdGetResult(&swkbd));
+                
         }
         if (didithttpport)
         {
@@ -232,7 +229,7 @@ void startMenu(){
 }
 
 void HelpMenu(){
-//    consoleSelect(&Parameters.bottomScreen);
+
     printf("\x1b[28;1HD-Pad to move, A = Ok , B = Back\n");
     printf("\x1b[29;1HStart to exit!\n");
 
@@ -300,12 +297,10 @@ int main(){
 
 
 
-    //KodiParameters.Init();
+  
 
     Parameters.Init();
     Parameters.Read_Config(KODICONFFILE);
-
-    //consoleInit(GFX_TOP, &Parameters.topScreen);
     consoleInit(GFX_BOTTOM, NULL);
 
     startMenu();
@@ -365,7 +360,7 @@ int main(){
         u32 kDown = hidKeysDown();
 
 
-        //consoleSelect(&Parameters.bottomScreen);
+       
         if(Menu.currmenuid == VIDEOLIBRARYLISTMENU){
             char *myout = Menu.PrintVideoLibrary();
             printf(myout);
@@ -431,8 +426,7 @@ int main(){
                         if(Parameters.KodiRPC->kodivideolib.size()>0){
                             Parameters.KodiRPC->CreateThumbTexture(Menu.movielistpos);
                         }
-                        //Parameters.KodiRPC->DownloadImage((char *)Parameters.KodiRPC->kodivideolib[Menu.movielistpos].thumburl.c_str());
-
+                        
 
                 }
                 else
@@ -464,8 +458,7 @@ int main(){
                     if(Parameters.KodiRPC->kodivideolib.size()>0){
                         Parameters.KodiRPC->CreateThumbTexture(Menu.movielistpos);
                     }
-                        //Parameters.KodiRPC->DownloadImage((char *)Parameters.KodiRPC->kodivideolib[Menu.movielistpos].thumburl.c_str());
-
+                       
 
                 }
                 else{
@@ -556,9 +549,7 @@ int main(){
     Parameters.runThreads = false;
     printf("Exit Main Thread LOOP\n");
     sleep(1);
-    //threadJoin(threads, U64_MAX);
-    //threadFree(threads);
-
+  
 
     threadJoin(KodiSocket.thread, U64_MAX);
     threadFree(KodiSocket.thread);
@@ -575,9 +566,6 @@ int main(){
 //---------------------------------------------------------------------------------
 void failExit(const char *fmt, ...) {
     //---------------------------------------------------------------------------------
-
-    //if(sock>0) close(sock);
-    //if(csock>0) close(csock);
 
     va_list ap;
 

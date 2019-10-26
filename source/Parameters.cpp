@@ -71,7 +71,7 @@ void CParameters::Save_Config(const char* configfile){
 
 
         fclose(fp);
-        //return 0;
+
 
 
 }
@@ -86,7 +86,7 @@ int CParameters::Read_Config(const char* configfile){
        //char myval[2048];
        fp = fopen(configfile, "r");
        if (fp == NULL){
-           //printf("Config file %s not found!\r\n",configfile);
+         
            return -1;
        }
        while ((read = getline(&line, &len, fp)) != -1) {
@@ -119,7 +119,7 @@ int CParameters::Read_Config(const char* configfile){
 
 void CParameters::Init(){
 
-    //sprintf(kodiaddress,"127.0.0.1");
+
     kodiport = 9090;
     kodihttpport = 8080;
     runThreads = true;
