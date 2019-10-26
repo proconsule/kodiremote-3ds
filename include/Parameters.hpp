@@ -24,11 +24,12 @@ class CParameters{
 public:
 
     void Init();
-    void Save_Config(char* configfile);
-	int Read_Config(char* configfile);
+    void Save_Config(const char* configfile);
+	int Read_Config(const char* configfile);
 	ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 
     int kodiport;
+    int kodihttpport;
     char kodiaddress[40];
 
     int connected;

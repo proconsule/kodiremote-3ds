@@ -57,7 +57,7 @@ ssize_t CParameters::getline(char **lineptr, size_t *n, FILE *stream) {
 }
 
 
-void CParameters::Save_Config(char* configfile){
+void CParameters::Save_Config(const char* configfile){
     FILE *fp;
 
         if((fp=fopen(configfile, "wb"))==NULL) {
@@ -66,6 +66,7 @@ void CParameters::Save_Config(char* configfile){
 
         fprintf(fp,"kodiaddress %s\n",kodiaddress);
 		fprintf(fp,"kodiport %d\n",kodiport);
+        fprintf(fp,"kodihttpport %d\n",kodihttpport);
 
 
 
@@ -76,7 +77,7 @@ void CParameters::Save_Config(char* configfile){
 }
 
 
-int CParameters::Read_Config(char* configfile){
+int CParameters::Read_Config(const char* configfile){
     FILE * fp;
        char * line = NULL;
        size_t len = 0;
@@ -99,6 +100,9 @@ int CParameters::Read_Config(char* configfile){
 		if(strcmp(myopt,"kodiport") == 0){
            sscanf(line,"%*s %d",&kodiport);
         }
+        if(strcmp(myopt,"kodihttpport") == 0){
+           sscanf(line,"%*s %d",&kodihttpport);
+        }
 
 
 
@@ -117,9 +121,11 @@ void CParameters::Init(){
 
     //sprintf(kodiaddress,"127.0.0.1");
     kodiport = 9090;
+    kodihttpport = 8080;
     runThreads = true;
     KodiRPC = new CKodiRPC();
-
+    KodiRPC->kodiaddress = kodiaddress;
+    KodiRPC->kodihttpport = &kodihttpport;
 }
 
 

@@ -9,7 +9,26 @@
 #define KODIRPC_HPP
 
 #include <stdio.h>
+#include <vector>
+#include <string>
+#include <iostream>
+#include <sstream>
+#include <string.h>
+#include <unistd.h>
 #include <json-c/json.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include <curl/curl.h>
+
+#include <turbojpeg.h>
+
+#include <jpeglib.h>
+
+#include <citro2d.h>
+
+#include <3ds.h>
 
 
 enum MSGIDS{
@@ -45,6 +64,31 @@ typedef struct{
 
 }kodiversion_struct;
 
+struct MemoryStruct {
+  char *memory;
+  size_t size;
+};
+
+struct ImageMemoryStruct {
+  char *memory;
+  size_t size;
+  int width;
+  int height;
+};
+
+typedef struct{
+    std::string label;
+    int movieid;
+    int year;
+    std::string thumburl;
+    std::string plotoutline;
+    MemoryStruct jpegref;
+
+
+}kodivideolib_struct;
+
+
+
 
 class CKodiRPC{
 public:
@@ -57,8 +101,31 @@ public:
     int volume;
     kodiversion_struct kodiversion;
 
-    void ParseJson(char *buffer);
+    int currvideolibid;
 
+    bool done;
+    void ParseJson(char *buffer);
+    bool ParseGetMovies(char *buffer);
+    void RequestMovieList();
+    std::vector<kodivideolib_struct> kodivideolib;
+
+    void DownloadMovieThumb(int movienum);
+    void CreateThumbTexture(int movienum);
+    void JpegDecompress(MemoryStruct *source,ImageMemoryStruct *dest);
+    
+    bool Draw_LoadImageMemory(C2D_Image *texture, ImageMemoryStruct *source);
+    void TurboJpegDecompress(MemoryStruct *source,ImageMemoryStruct *dest);
+
+    C2D_Image thumbtext;
+
+    std::string wrap(const char *text, size_t line_length);
+    
+    static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
+
+    int *kodisock;
+
+    char * kodiaddress;
+    int * kodihttpport;
 
 
 };
