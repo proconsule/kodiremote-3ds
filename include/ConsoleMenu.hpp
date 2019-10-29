@@ -11,6 +11,15 @@
 using namespace std;
 
 typedef struct{
+    int menupos;
+    int currmenuid;
+    int prevmenuid;
+    int currmenumax;
+    bool havesubmenu;
+
+}menu_struct;
+
+typedef struct{
 	string menutitle;
 	int menuid;
 	std::vector<bool> havesubmenu;
@@ -41,7 +50,11 @@ class CConsoleMenu{
 	void Init();
 	char * PrintMenu(int menuid);
     char * PrintVideoLibrary();
-	void UpdateMenu(int menuid);
+
+
+
+
+	//void UpdateMenu(int menuid);
 	int * PrevMenuID(int menuid);
 	int MenuItems(int menuid);
 	bool HaveSubmenu(int menuid,int pos);
@@ -60,6 +73,23 @@ class CConsoleMenu{
 	CParameters *Parameters;
     CKodiRPC *KodiRPC;
 
+
+
+
+    C2D_TextBuf menudynbuffer;
+    C2D_TextBuf menudynbuffer2;
+    C2D_TextBuf menudynbuffer3;
+
+    C2D_TextBuf topmenudynbuffer;
+    C2D_TextBuf topmenudynbuffer2;
+
+    void GUIInit();
+    void GUIStartMenu(C3D_RenderTarget* target,menu_struct *menu);
+    void GUIMenu(C3D_RenderTarget* target,int menuid);
+    void GUIMenuVideoLibrary(C3D_RenderTarget* target);
+    void VideoLibRender(C3D_RenderTarget* target,int videoid);
+
+    void GUIVideoRefresh(C3D_RenderTarget* target,std::string label,int current,int max);
 
 };
 

@@ -1,0 +1,12 @@
+--atlas -f rgba8888 -z auto
+rev.png
+stop.png
+play.png
+pause.png
+ff.png
+arrow.png
+okbut.png
+backbut.png
+infobut.png
+homebut.png
+contextbut.png

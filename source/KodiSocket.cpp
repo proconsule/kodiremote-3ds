@@ -30,7 +30,7 @@ void *CKodiSocket::SockThread(void *arg){
      sock = socket(AF_INET , SOCK_STREAM , 0);
      if (sock == -1)
      {
-         
+
      }
 
 
@@ -47,7 +47,7 @@ void *CKodiSocket::SockThread(void *arg){
      fcntl(sock, F_SETFL, fcntl(sock, F_GETFL, 0) | O_NONBLOCK);
 
      Parameters->connected = 1;
-    
+
 
     char vercmd[] = "{\"jsonrpc\": \"2.0\", \"method\": \"Application.GetProperties\", \"params\": {\"properties\": [\"version\"]}, \"id\": 102}\r\n";
 
@@ -55,10 +55,8 @@ void *CKodiSocket::SockThread(void *arg){
      while(Parameters->runThreads){
          int n_bytes = recv(sock,lastbuf,10,0);
 
-         if(n_bytes <0 ){
-             //rxconfig.maxfreq = 2;
-             usleep(1000);
-         }else{
+         if(n_bytes >0 ){
+
              mysize += n_bytes;
              if(n_bytes <10){
 
@@ -66,9 +64,9 @@ void *CKodiSocket::SockThread(void *arg){
                 server_msg = (char *)realloc(server_msg,mysize);
                 memcpy(&server_msg[mysize-n_bytes],lastbuf,n_bytes);
                 Parameters->KodiRPC->ParseJson(server_msg);
-               
+
                 mysize = 0;
- 
+
 
              }
              else
@@ -78,6 +76,27 @@ void *CKodiSocket::SockThread(void *arg){
                 memcpy(&server_msg[mysize-10],lastbuf,10);
              }
              memset(lastbuf,0,10);
+         }
+         else{
+             int error = errno;
+             switch (error)
+                {
+                    //case EAGAIN:
+                    case EWOULDBLOCK:
+                    // Socket is O_NONBLOCK and there is no data available
+                    break;
+                    case EINTR:
+                    // an interrupt (signal) has been catched
+                    // should be ingore in most cases
+                    break;
+                    default:
+                    Parameters->connected = 0;
+                    close(sock);
+                    return 0;
+                    // socket has an error, no valid anymore
+
+                }
+
          }
 
      }

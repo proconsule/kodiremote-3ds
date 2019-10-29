@@ -83,10 +83,10 @@ int CParameters::Read_Config(const char* configfile){
        size_t len = 0;
        ssize_t read;
        char myopt[30];
-       //char myval[2048];
+
        fp = fopen(configfile, "r");
        if (fp == NULL){
-         
+
            return -1;
        }
        while ((read = getline(&line, &len, fp)) != -1) {
@@ -122,6 +122,7 @@ void CParameters::Init(){
 
     kodiport = 9090;
     kodihttpport = 8080;
+    sprintf(kodiaddress,"127.0.0.1");
     runThreads = true;
     KodiRPC = new CKodiRPC();
     KodiRPC->kodiaddress = kodiaddress;

@@ -34,7 +34,9 @@
 enum MSGIDS{
     INPUTKEY = 1000,
     VOLUME = 101,
-    VERSION = 102
+    VERSION = 102,
+    PLAYMOVIE = 201,
+    PLAYER = 202
 
 
 
@@ -81,12 +83,18 @@ typedef struct{
     int movieid;
     int year;
     std::string thumburl;
-    std::string plotoutline;
+    std::string plot;
     MemoryStruct jpegref;
 
 
 }kodivideolib_struct;
 
+typedef struct{
+    C2D_Image thumbtext;
+    int width;
+    int height;
+
+}thumbimage_struct;
 
 
 
@@ -95,7 +103,7 @@ public:
     void Init();
 
 
-    char * CreateMessageInputKey(InputKeys Key);
+    void CreateMessageInputKey(InputKeys Key);
 
 
     int volume;
@@ -107,19 +115,28 @@ public:
     void ParseJson(char *buffer);
     bool ParseGetMovies(char *buffer);
     void RequestMovieList();
+    void PlayMovie(int movieid);
+
+    void PlayerPlayPayse();
+    void PlayerStop();
+    void PlayerSeekFF();
+    void PlayerSeekRev();
+
+
     std::vector<kodivideolib_struct> kodivideolib;
 
     void DownloadMovieThumb(int movienum);
     void CreateThumbTexture(int movienum);
     void JpegDecompress(MemoryStruct *source,ImageMemoryStruct *dest);
-    
+
     bool Draw_LoadImageMemory(C2D_Image *texture, ImageMemoryStruct *source);
     void TurboJpegDecompress(MemoryStruct *source,ImageMemoryStruct *dest);
 
-    C2D_Image thumbtext;
+    //C2D_Image thumbtext;
+    thumbimage_struct thumbimage;
 
     std::string wrap(const char *text, size_t line_length);
-    
+
     static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
 
     int *kodisock;

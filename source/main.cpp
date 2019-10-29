@@ -29,6 +29,7 @@
 #include "Parameters.hpp"
 #include "KodiSocket.hpp"
 #include "ConsoleMenu.hpp"
+#include "GFX.hpp"
 
 #define SOC_ALIGN       0x1000
 #define SOC_BUFFERSIZE  0x100000
@@ -55,44 +56,9 @@ void socShutdown() {
 
 }
 
-typedef struct{
-	int menupos;
-	int currmenuid;
-	int prevmenuid;
-	int currmenumax;
-	bool havesubmenu;
-
-}menu_struct;
 
 
-void printStartMenu(menu_struct *menu){
-
-	if(menu->currmenuid == 0){
-		printf("\x1b[1;7HKodi Connect Menu\n");
-		printf("\x1b[2;3HKodi Address: %s\n",Parameters.kodiaddress);
-		printf("\x1b[3;3HKodi port: %d\n",Parameters.kodiport);
-        printf("\x1b[4;3HKodi HTTP port: %d\n",Parameters.kodihttpport);
-		printf("\x1b[5;3HSave & Continue\n");
-		printf("\x1b[6;3HContinue\n");
-		menu->currmenumax = 5;
-		for(int i=0;i<menu->currmenumax;i++){
-		  if(i==menu->menupos){
-			  printf("\x1b[%d;1H*",i+2);
-
-		  }else
-		  {
-			printf("\x1b[%d;1H ",i+2);
-		  }
-		}
-
-
-	}
-
-}
-
-
-
-void startMenu(){
+void startMenu(C3D_RenderTarget* target,C3D_RenderTarget* top,CConsoleMenu *Menu){
 
 	menu_struct menu;
 	menu.menupos = 0;
@@ -107,22 +73,24 @@ void startMenu(){
         bool diditwsport = false;
         bool didithttpport = false;
 
-        
-		gspWaitForVBlank();
 
+        C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+        C2D_TargetClear(top, C2D_Color32(0x68, 0xB0, 0xD8, 0xFF));
+        C2D_SceneBegin(top);
+        C3D_FrameEnd(0);
 		hidScanInput();
 		u32 kDown = hidKeysDown();
-		printStartMenu(&menu);
+        Menu->GUIStartMenu(target,&menu);
 
 		if (kDown & KEY_A){
 			if(menu.menupos == 0){
 				diditip = true;
 				swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, -1);
-				swkbdSetInitialText(&swkbd, mybuf);
+				swkbdSetInitialText(&swkbd, Parameters.kodiaddress);
 				swkbdSetHintText(&swkbd, "Enter Kodi Address");
 				swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
 				swkbdSetButton(&swkbd, SWKBD_BUTTON_MIDDLE, "OK", true);
-				
+
 				button = swkbdInputText(&swkbd, mybuf, sizeof(mybuf));
 			}
             if(menu.menupos == 1){
@@ -131,9 +99,11 @@ void startMenu(){
                 swkbdSetValidation(&swkbd, SWKBD_ANYTHING, 0, 0);
                 swkbdSetFeatures(&swkbd, SWKBD_FIXED_WIDTH);
                 swkbdSetNumpadKeys(&swkbd, L'ツ', L'益');
+                swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
+                swkbdSetButton(&swkbd, SWKBD_BUTTON_MIDDLE, "OK", true);
                 button = swkbdInputText(&swkbd, mybuf, sizeof(mybuf));
             }
-            
+
             if(menu.menupos == 2){
                 didithttpport = true;
                 swkbdInit(&swkbd, SWKBD_TYPE_NUMPAD, 1, 8);
@@ -142,9 +112,9 @@ void startMenu(){
                 swkbdSetNumpadKeys(&swkbd, L'ツ', L'益');
                 button = swkbdInputText(&swkbd, mybuf, sizeof(mybuf));
             }
-            
-            
-            
+
+
+
 			if(menu.menupos == menu.currmenumax-2){
 				Parameters.Save_Config(KODICONFFILE);
 				break;
@@ -185,13 +155,13 @@ void startMenu(){
 			} else{
 
 			}
-				
+
 		}
         if (diditwsport)
         {
             if (button != SWKBD_BUTTON_NONE)
             {
-                if(menu.menupos == 0){
+                if(menu.menupos == 1){
                    sscanf(mybuf,"%d",&Parameters.kodiport);
                 }
 
@@ -200,13 +170,13 @@ void startMenu(){
             } else{
 
             }
-                
+
         }
         if (didithttpport)
         {
             if (button != SWKBD_BUTTON_NONE)
             {
-                if(menu.menupos == 0){
+                if(menu.menupos == 2){
                    sscanf(mybuf,"%d",&Parameters.kodihttpport);
                 }
 
@@ -215,69 +185,11 @@ void startMenu(){
             } else{
 
             }
-                //printf("swkbd event: %d\n", swkbdGetResult(&swkbd));
         }
-        
-        gfxFlushBuffers();
-        gfxSwapBuffers();
 
 	}
 
 
-
-
-}
-
-void HelpMenu(){
-
-    printf("\x1b[28;1HD-Pad to move, A = Ok , B = Back\n");
-    printf("\x1b[29;1HStart to go back into main menu!\n");
-
-
-}
-
-C2D_TextBuf g_dynamicBuf;
-C2D_TextBuf g_dynamicBuf2;
-
-void SceneInit(){
-    g_dynamicBuf = C2D_TextBufNew(4096);
-    g_dynamicBuf2 = C2D_TextBufNew(4096);
-
-}
-
-void VideoLibRender(int videoid){
-
-    if(Parameters.KodiRPC->kodivideolib.size() == 0){
-        C2D_TextBufClear(g_dynamicBuf);
-        char buf[160];
-        C2D_Text dynText;
-        snprintf(buf, sizeof(buf), "Refresh Library First!");
-        C2D_TextParse(&dynText, g_dynamicBuf, buf);
-        C2D_DrawText(&dynText, 0, 150.0f, 100.0f, 0.5f, 0.5f, 0.5f);
-        return;
-    }
-    
-    
-    if(videoid == -1)return;
-    C2D_TextBufClear(g_dynamicBuf);
-    C2D_TextBufClear(g_dynamicBuf2);
-    std::string wrappedplot = Parameters.KodiRPC->wrap(Parameters.KodiRPC->kodivideolib[videoid].plotoutline.c_str(),60);
-    char buf[160];
-    char buf2[wrappedplot.size()];
-	C2D_Text dynText;
-    C2D_Text dynText2;
-	snprintf(buf, sizeof(buf), "%s (%d)", Parameters.KodiRPC->kodivideolib[videoid].label.c_str(),Parameters.KodiRPC->kodivideolib[videoid].year);
-    snprintf(buf2, sizeof(buf2), "%s",wrappedplot.c_str());
-	C2D_TextParse(&dynText, g_dynamicBuf, buf);
-    C2D_TextParse(&dynText2, g_dynamicBuf2, buf2);
-	C2D_TextOptimize(&dynText);
-    C2D_TextOptimize(&dynText2);
-	C2D_DrawText(&dynText, 0, 8.0f, 10.0f, 0.5f, 0.5f, 0.5f);
-    C2D_DrawText(&dynText2, 0, 115.0f, 30.0f, 0.5f, 0.35f, 0.35f);
-
-	if(Parameters.KodiRPC->thumbtext.tex != NULL){
-    C2D_DrawImageAt(Parameters.KodiRPC->thumbtext, 8.0f, 30.0f, 0.5f, NULL, 0.29f, 0.29f);
-	}
 
 
 }
@@ -286,39 +198,44 @@ void VideoLibRender(int videoid){
 
 int main(){
 
+    romfsInit();
     gfxInitDefault();
 
     C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
 	C2D_Init(C2D_DEFAULT_MAX_OBJECTS);
 	C2D_Prepare();
-
-	// Create screen
 	C3D_RenderTarget* top = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
+    C3D_RenderTarget* bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_RIGHT);
 
 
 
-  
+
 
     Parameters.Init();
     Parameters.Read_Config(KODICONFFILE);
-    consoleInit(GFX_BOTTOM, NULL);
 
-    startMenu();
-    printf("\x1b[2J");
+    CConsoleMenu Menu;
+    Menu.Parameters = &Parameters;
+    Menu.Init();
+    Menu.GUIInit();
 
 
 
+
+    CGFX *GFX = new CGFX();
+    GFX->Init();
+
+
+
+
+
+
+    startMenu(bottom,top,&Menu);
 
     CKodiSocket KodiSocket;
 
 
     KodiSocket.Parameters = &Parameters;
-
-
-    CConsoleMenu Menu;
-    Menu.Parameters = &Parameters;
-    Menu.Init();
-
 
     SOC_buffer = (u32*)memalign(SOC_ALIGN, SOC_BUFFERSIZE);
 
@@ -345,10 +262,7 @@ int main(){
 
     KodiSocket.Init(prio);
 
-    sleep(1);
-    printf("\x1b[2J");
 
-    SceneInit();
 
     while (aptMainLoop())
     {
@@ -359,22 +273,119 @@ int main(){
         hidScanInput();
         u32 kDown = hidKeysDown();
 
+        touchPosition touch;
+        hidTouchRead(&touch);
 
-       
+
+
+
         if(Menu.currmenuid == VIDEOLIBRARYLISTMENU){
-            char *myout = Menu.PrintVideoLibrary();
-            printf(myout);
-            free(myout);
+            Menu.GUIMenuVideoLibrary(bottom);
         }
         else if(Menu.currmenuid == REMOTEMENU){
-            HelpMenu();
+            C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+            C2D_TargetClear(top, C2D_Color32(0x68, 0xB0, 0xD8, 0xFF));
+            C2D_SceneBegin(top);
+            C3D_FrameEnd(0);
+            C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+            C2D_TargetClear(bottom, C2D_Color32(0x68, 0xB0, 0xD8, 0xFF));
+            C2D_SceneBegin(bottom);
+            //u32 clrWhite = C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF);
+            //u32 clrRed = C2D_Color32(0xFF, 0x00, 0x00, 0xFF);
+
+            for(unsigned int i=0;i<GFX->remotemenuspritevector.size();i++){
+                C2D_DrawSprite(&GFX->remotemenuspritevector[i].spr);
+            }
+
+            int RemoteMenuTouch = GFX->RemoteMenutouchSprite(&touch);
+
+            if(RemoteMenuTouch >-1){
+                //C2D_DrawRectSolid(touch.px,touch.py,0.6f,20.0f,20.0f,clrRed);
+                if(RemoteMenuTouch == REMOTEREV){
+                    Parameters.KodiRPC->PlayerSeekRev();
+                    usleep(500000);
+                }
+                if(RemoteMenuTouch == REMOTESTOP){
+                    Parameters.KodiRPC->PlayerStop();
+                    usleep(500000);
+                }
+                if(RemoteMenuTouch == REMOTEPLAY){
+                    Parameters.KodiRPC->PlayerPlayPayse();
+                    usleep(500000);
+                }
+                if(RemoteMenuTouch == REMOTEPAUSE){
+                    Parameters.KodiRPC->PlayerPlayPayse();
+                    usleep(500000);
+                }
+                if(RemoteMenuTouch == REMOTEFF){
+                    Parameters.KodiRPC->PlayerSeekFF();
+                    usleep(500000);
+                }
+                if(RemoteMenuTouch == REMOTEDOWN){
+                    Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYDOWN);
+                    usleep(500000);
+                }
+                if(RemoteMenuTouch == REMOTELEFT){
+                    Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYLEFT);
+                    usleep(500000);
+                }
+                if(RemoteMenuTouch == REMOTEUP){
+                    Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYUP);
+                    usleep(500000);
+                }
+                if(RemoteMenuTouch == REMOTERIGHT){
+                    Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYRIGHT);
+                    usleep(500000);
+                }
+
+                if(RemoteMenuTouch == REMOTEOK){
+                    Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYSELECT);
+                    usleep(500000);
+                }
+                if(RemoteMenuTouch == REMOTEBACK){
+                    Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYBACK);
+                    usleep(500000);
+                }
+                if(RemoteMenuTouch == REMOTEINFO){
+                    Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYINFO);
+                    usleep(500000);
+                }
+                if(RemoteMenuTouch == REMOTEHOME){
+                    Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYHOME);
+                    usleep(500000);
+                }
+                if(RemoteMenuTouch == REMOTECONTEXT){
+                    Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYCONTEXT);
+                    usleep(500000);
+                }
+
+
+            }
+            else
+            {
+
+
+                //C2D_DrawRectSolid(touch.px,touch.py,0.6f,20.0f,20.0f,clrWhite);
+
+            }
+
+
+            C3D_FrameEnd(0);
+            //HelpMenu();
         }
         else
         {
-            char *myout = Menu.PrintMenu(Menu.currmenuid);
+            //char *myout = Menu.PrintMenu(Menu.currmenuid);
             Menu.currmenumax = Menu.MenuItems(Menu.currmenuid);
-            printf(myout);
-            free(myout);
+            //printf(myout);
+            //free(myout);
+            C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+            C2D_TargetClear(top, C2D_Color32(0x68, 0xB0, 0xD8, 0xFF));
+            C2D_SceneBegin(top);
+            C3D_FrameEnd(0);
+
+
+            Menu.GUIMenu(bottom,Menu.currmenuid);
         }
 
 
@@ -386,7 +397,6 @@ int main(){
         if (kDown & KEY_START){
 
                 if(Menu.currmenuid == REMOTEMENU){
-                    printf("\x1b[2J");
                     int *menuget = Menu.PrevMenuID(Menu.currmenuid);
                     Menu.currmenuid = menuget[0];
                     Menu.menupos = menuget[1];
@@ -399,26 +409,25 @@ int main(){
         if (kDown & KEY_LEFT){
 
                 if(Menu.currmenuid == REMOTEMENU){
-                    char *test = Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYLEFT);
-                    send(KodiSocket.sock,test,strlen(test),0);
+                    Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYLEFT);
+
                 }
 
         }
 
         if (kDown & KEY_RIGHT){
                 if(Menu.currmenuid == REMOTEMENU){
-                    char *test = Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYRIGHT);
-                    send(KodiSocket.sock,test,strlen(test),0);
+                    Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYRIGHT);
+
                 }
         }
 
         if (kDown & KEY_UP){
                 if(Menu.currmenuid == REMOTEMENU){
-                        char *test = Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYUP);
-                        send(KodiSocket.sock,test,strlen(test),0);
+                        Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYUP);
+
                 }
                 else if(Menu.currmenuid == VIDEOLIBRARYLISTMENU){
-                        printf("\x1b[2J");
                         if(Menu.movielistpos <1){
                             Menu.movielistpos = Parameters.KodiRPC->kodivideolib.size()-1;
                         }
@@ -429,7 +438,7 @@ int main(){
                         if(Parameters.KodiRPC->kodivideolib.size()>0){
                             Parameters.KodiRPC->CreateThumbTexture(Menu.movielistpos);
                         }
-                        
+
 
                 }
                 else
@@ -446,11 +455,10 @@ int main(){
 
         if (kDown & KEY_DOWN){
                 if(Menu.currmenuid == REMOTEMENU){
-                    char *test = Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYDOWN);
-                    send(KodiSocket.sock,test,strlen(test),0);
+                    Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYDOWN);
+
                 }
                 else if(Menu.currmenuid == VIDEOLIBRARYLISTMENU){
-                        printf("\x1b[2J");
                         if((unsigned int)Menu.movielistpos >= Parameters.KodiRPC->kodivideolib.size()-1){
                             Menu.movielistpos = 0;
                         }
@@ -461,7 +469,7 @@ int main(){
                     if(Parameters.KodiRPC->kodivideolib.size()>0){
                         Parameters.KodiRPC->CreateThumbTexture(Menu.movielistpos);
                     }
-                       
+
 
                 }
                 else{
@@ -480,48 +488,56 @@ int main(){
                     break;
                 }
 
-
-                if(Menu.currmenuid == VIDEOLIBRARYMENU && Menu.menupos == 1){
-                    
-                    Parameters.KodiRPC->RequestMovieList();
-                    
-                }
-
-
-                printf("\x1b[2J");
-
-                if(Menu.HaveSubmenu(Menu.currmenuid,Menu.menupos) == false){
-
-                }else
-                {
-                    Menu.currmenuid =  Menu.GetSubmenuID(Menu.currmenuid,Menu.menupos);
-                    Menu.UpdateMenu(Menu.currmenuid);
-                    Menu.menupos = 0;
+                if(Menu.currmenuid == REMOTEMENU){
+                    Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYSELECT);
 
                 }
 
                 if(Menu.currmenuid == VIDEOLIBRARYLISTMENU){
-                    
+                    Parameters.KodiRPC->PlayMovie(Parameters.KodiRPC->kodivideolib[Menu.movielistpos].movieid);
+
+                }
+
+
+                if(Menu.currmenuid == VIDEOLIBRARYMENU && Menu.menupos == 1){
+
+                    Parameters.KodiRPC->RequestMovieList();
+                    sleep(1);
+                    for(unsigned int i=0;i<Parameters.KodiRPC->kodivideolib.size();i++){
+                        Menu.GUIVideoRefresh(bottom,Parameters.KodiRPC->kodivideolib[i].label,i,Parameters.KodiRPC->kodivideolib.size());
+
+                        Parameters.KodiRPC->DownloadMovieThumb(i);
+                    }
+
+                }
+
+                if(Menu.currmenuid == VIDEOLIBRARYMENU && Menu.menupos == 0){
+
                     Parameters.KodiRPC->currvideolibid = 0;
                     if(Parameters.KodiRPC->kodivideolib.size()>0){
                         Parameters.KodiRPC->CreateThumbTexture(Menu.movielistpos);
                     }
                 }
 
-                if(Menu.currmenuid == REMOTEMENU){
-                    char *test = Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYSELECT);
-                    send(KodiSocket.sock,test,strlen(test),0);
+                if(Menu.HaveSubmenu(Menu.currmenuid,Menu.menupos) == false){
+
+                }else
+                {
+                    Menu.currmenuid =  Menu.GetSubmenuID(Menu.currmenuid,Menu.menupos);
+                    Menu.menupos = 0;
+
                 }
+
+
 
         }
 
         if (kDown & KEY_B){
                 if(Menu.currmenuid == REMOTEMENU){
-                    char *test = Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYBACK);
-                    send(KodiSocket.sock,test,strlen(test),0);
+                    Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYBACK);
+
                 }else
                 {
-                    printf("\x1b[2J");
                     int *menuget = Menu.PrevMenuID(Menu.currmenuid);
                     Menu.currmenuid = menuget[0];
                     Menu.menupos = menuget[1];
@@ -534,17 +550,11 @@ int main(){
 
 
 
-
-        C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-		C2D_TargetClear(top, C2D_Color32(0x68, 0xB0, 0xD8, 0xFF));
-		C2D_SceneBegin(top);
 		if(Menu.currmenuid == VIDEOLIBRARYLISTMENU){
-            VideoLibRender(Menu.movielistpos);
 
-
+            Menu.VideoLibRender(top,Menu.movielistpos);
 		}
 
-		C3D_FrameEnd(0);
 
 
     }
@@ -552,16 +562,18 @@ int main(){
     Parameters.runThreads = false;
     printf("Exit Main Thread LOOP\n");
     sleep(1);
-  
+
 
     threadJoin(KodiSocket.thread, U64_MAX);
     threadFree(KodiSocket.thread);
 
 
     socShutdown();
+    C2D_SpriteSheetFree(GFX->RemoteMenuspriteSheet);
     C2D_Fini();
 	C3D_Fini();
     gfxExit();
+    romfsExit();
     return 0;
 }
 

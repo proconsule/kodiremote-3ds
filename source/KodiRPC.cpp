@@ -1,5 +1,5 @@
 //  Created by proconsule on 20/10/2019.
-//  Copyright � 2019 proconsule. All rights reserved.
+//  Copyright © 2019 proconsule. All rights reserved.
 //
 
 #include "KodiRPC.hpp"
@@ -160,14 +160,16 @@ void CKodiRPC::JpegDecompress(MemoryStruct *source,ImageMemoryStruct *dest){
 
 void CKodiRPC::CreateThumbTexture(int movienum){
     if(kodivideolib[movienum].jpegref.size>0){
-        if(thumbtext.tex != NULL){
-            C3D_TexDelete(thumbtext.tex);
-            linearFree((Tex3DS_SubTexture *)thumbtext.subtex);
+        if(thumbimage.thumbtext.tex != NULL){
+            C3D_TexDelete(thumbimage.thumbtext.tex);
+            linearFree((Tex3DS_SubTexture *)thumbimage.thumbtext.subtex);
         }
         struct ImageMemoryStruct dest;
         //JpegDecompress(&chunk,&dest);
         TurboJpegDecompress(&kodivideolib[movienum].jpegref,&dest);
-        Draw_LoadImageMemory(&thumbtext,&dest);
+        thumbimage.width = dest.width;
+        thumbimage.height = dest.height;
+        Draw_LoadImageMemory(&thumbimage.thumbtext,&dest);
         free(dest.memory);
     }
 }
@@ -177,7 +179,7 @@ std::string CKodiRPC::wrap(const char *text, size_t line_length)
     std::istringstream words(text);
     std::ostringstream wrapped;
     std::string word;
- 
+
     if (words >> word) {
         wrapped << word;
         size_t space_left = line_length - word.length();
@@ -199,8 +201,8 @@ void CKodiRPC::DownloadMovieThumb(int movienum){
 
   CURL *curl_handle;
   CURLcode res;
-   
-  
+
+
   kodivideolib[movienum].jpegref.memory = (char *)malloc(1);
   kodivideolib[movienum].jpegref.size = 0;
 
@@ -219,23 +221,11 @@ void CKodiRPC::DownloadMovieThumb(int movienum){
   res = curl_easy_perform(curl_handle);
 
   if(res != CURLE_OK) {
-    
+
   }
   else {
 
-    /*
-    if(thumbtext.tex != NULL){
-        C3D_TexDelete(thumbtext.tex);
-        linearFree((Tex3DS_SubTexture *)thumbtext.subtex);
-    }
-    struct ImageMemoryStruct dest;
-    //JpegDecompress(&chunk,&dest);
-    TurboJpegDecompress(&chunk,&dest);
-    Draw_LoadImageMemory(&thumbtext,&dest);
-    free(dest.memory);
- 
-    //printf("\x1b[24;1HJpeg Size: %lu W: %d H: %d", (unsigned long)dest.size,dest.width,dest.height);
-     */
+
   }
 
   curl_easy_cleanup(curl_handle);
@@ -315,11 +305,8 @@ static void Draw_C3DTexToC2DImage(C3D_Tex *tex, Tex3DS_SubTexture *subtex, u8 *b
 bool CKodiRPC::Draw_LoadImageMemory(C2D_Image *texture, ImageMemoryStruct *source) {
 
 
-	//u8 *data = Draw_LoadExternalImageFile(path, &size);
-	//image = stbi_load_from_memory((stbi_uc const *)data, (int)size, &width, &height, NULL, STBI_rgb_alpha);
 
 	if (source->width > 1024 || source->height > 1024) {
-		//stbi_image_free(image);
 		return false;
 	}
 
@@ -328,11 +315,49 @@ bool CKodiRPC::Draw_LoadImageMemory(C2D_Image *texture, ImageMemoryStruct *sourc
 	Draw_C3DTexToC2DImage(tex, subtex, (u8 *)source->memory, (u32)(source->width * source->height * BYTES_PER_PIXEL), (u32)source->width, (u32)source->height, GPU_RGB8);
 	texture->tex = tex;
 	texture->subtex = subtex;
-	//stbi_image_free(image);
-	//free(source);
+
 	return true;
 }
 
+void CKodiRPC::PlayMovie(int movieid){
+
+    char output[160];
+    sprintf(output,"{\"jsonrpc\":\"2.0\", \"method\":\"Player.Open\", \"id\":%d,\"params\":{\"item\":{\"movieid\":%d}}}",PLAYMOVIE,movieid);
+    send(*kodisock,output,strlen(output),0);
+
+}
+
+void CKodiRPC::PlayerPlayPayse(){
+
+    char output[160];
+    sprintf(output,"{\"jsonrpc\": \"2.0\", \"method\": \"Player.PlayPause\", \"params\": { \"playerid\": 1 }, \"id\": %d}",PLAYER);
+    send(*kodisock,output,strlen(output),0);
+
+
+}
+
+void CKodiRPC::PlayerStop(){
+
+    char output[160];
+    sprintf(output,"{\"jsonrpc\": \"2.0\", \"method\": \"Player.Stop\", \"params\": { \"playerid\": 1 }, \"id\": %d}",PLAYER);
+    send(*kodisock,output,strlen(output),0);
+
+
+}
+
+void CKodiRPC::PlayerSeekFF(){
+    char output[160];
+    sprintf(output,"{\"jsonrpc\":\"2.0\", \"method\":\"Player.Seek\", \"params\": { \"playerid\":1, \"value\": \"smallforward\" }, \"id\":%d}",PLAYER);
+    send(*kodisock,output,strlen(output),0);
+
+}
+
+void CKodiRPC::PlayerSeekRev(){
+    char output[160];
+    sprintf(output,"{\"jsonrpc\":\"2.0\", \"method\":\"Player.Seek\", \"params\": { \"playerid\":1, \"value\": \"smallbackward\" }, \"id\":%d}",PLAYER);
+    send(*kodisock,output,strlen(output),0);
+
+}
 
 
 
@@ -358,15 +383,10 @@ bool CKodiRPC::ParseGetMovies(char *buffer){
     int total = json_object_get_int(totalobj);
     int start = json_object_get_int(startobj);
 
-    /*
-    printf("%d %d\n",start,total);
-    gspWaitForVBlank();
-    gfxFlushBuffers();
-    gfxSwapBuffers();
-    */
+
     if(start ==total){
 
-        //printf("End List\n");
+
         return true;
     }
     else
@@ -384,17 +404,17 @@ bool CKodiRPC::ParseGetMovies(char *buffer){
             struct json_object *yearobj;
             struct json_object *thumbobj;
             json_object_object_get_ex(movieobj, "label", &labelobj);
-            json_object_object_get_ex(movieobj, "plotoutline", &plotobj);
+            json_object_object_get_ex(movieobj, "plot", &plotobj);
             json_object_object_get_ex(movieobj, "movieid", &movieidobj);
             json_object_object_get_ex(movieobj, "year", &yearobj);
             json_object_object_get_ex(movieobj, "thumbnail", &thumbobj);
 
 
 
-            
+
 
             kodivideolib_struct kodimovie;
-          
+
             char *labelstring = (char *)json_object_get_string(labelobj);
             char *plotstring = (char *)json_object_get_string(plotobj);
             char *thumbstring = (char *)json_object_get_string(thumbobj);
@@ -404,7 +424,7 @@ bool CKodiRPC::ParseGetMovies(char *buffer){
             kodimovie.label.assign(labelstring,strlen(labelstring));
             kodimovie.movieid = json_object_get_int(movieidobj);
             kodimovie.year = json_object_get_int(yearobj);
-            kodimovie.plotoutline.assign(plotstring,strlen(plotstring));
+            kodimovie.plot.assign(plotstring,strlen(plotstring));
             kodimovie.thumburl.assign(thumbstring,strlen(thumbstring));
             kodimovie.thumburl = urlEncode(kodimovie.thumburl);
             char kodiurl[50];
@@ -412,9 +432,9 @@ bool CKodiRPC::ParseGetMovies(char *buffer){
             sprintf(kodiurl,"http://%s:%d/image/",kodiaddress,*kodihttpport);
             kodimovie.thumburl.insert(0,kodiurl);
             kodivideolib.push_back(kodimovie);
-            
-            
-            
+
+
+
 
         }
 
@@ -429,21 +449,11 @@ bool CKodiRPC::ParseGetMovies(char *buffer){
 void CKodiRPC::RequestMovieList(){
 
         std::vector<kodivideolib_struct>().swap(kodivideolib);
-    
+
         char test[1024];
-        sprintf(test,"{\"jsonrpc\": \"2.0\", \"method\": \"VideoLibrary.GetMovies\", \"params\": { \"limits\": { \"start\" : 0 } ,\"properties\" : [\"rating\", \"thumbnail\", \"playcount\",\"plotoutline\",\"year\"] ,\"sort\": { \"order\": \"ascending\", \"method\": \"label\", \"ignorearticle\": true } }, \"id\": \"libMovies\"}");
+        sprintf(test,"{\"jsonrpc\": \"2.0\", \"method\": \"VideoLibrary.GetMovies\", \"params\": { \"limits\": { \"start\" : 0 } ,\"properties\" : [\"rating\", \"thumbnail\", \"playcount\", \"plot\", \"year\"] ,\"sort\": { \"order\": \"ascending\", \"method\": \"label\", \"ignorearticle\": true } }, \"id\": \"libMovies\"}");
         send(*kodisock,test,strlen(test),0);
-        sleep(1);
-    for(unsigned int i=0;i<kodivideolib.size();i++){
-        gspWaitForVBlank();
-        gfxFlushBuffers();
-        gfxSwapBuffers();
-        printf("\x1b[6;0H");
-        printf("\x1b[K");
-        printf("\x1b[6;1H%s\n",kodivideolib[i].label.c_str());
-        printf("\x1b[7;3HDownloading Cover %d\t/\t%d\n",i+1,kodivideolib.size());
-        DownloadMovieThumb(i);
-    }
+
 
 
 
@@ -454,7 +464,7 @@ void CKodiRPC::ParseJson(char* buffer){
 
     struct json_object *jobj;
     jobj = json_tokener_parse(buffer);
-   
+
     struct json_object *idobj =  find_something(jobj,"id");
     if(idobj == NULL){
         return;
@@ -463,11 +473,11 @@ void CKodiRPC::ParseJson(char* buffer){
     type = json_object_get_type(idobj);
     if(type == json_type_int){
         int id =  json_object_get_int(idobj);
-       
+
         if(id == VOLUME){
             struct json_object *resobj =  find_something(jobj,"result");
             struct json_object *volobj =  find_something(resobj,"volume");
-           
+
             volume = json_object_get_int(volobj);
         }
          if(id == VERSION){
@@ -493,13 +503,13 @@ void CKodiRPC::ParseJson(char* buffer){
         if(strcmp(stringid,"libMovies") == 0){
            done =  ParseGetMovies(buffer);
         }
-         //printf("STRING ID: %s\r\n",stringid);
+
     }
 
 
 }
 
-char * CKodiRPC::CreateMessageInputKey(InputKeys Key){
+void CKodiRPC::CreateMessageInputKey(InputKeys Key){
     json_object * jobj = json_object_new_object();
     json_object *jstring = json_object_new_string("2.0");
     json_object *jid = json_object_new_int(INPUTKEY);
@@ -546,8 +556,8 @@ char * CKodiRPC::CreateMessageInputKey(InputKeys Key){
     json_object_object_add(jobj,"method", jstringkey);
 
 
-
-    return (char *)json_object_to_json_string(jobj);
+    char *output = (char *)json_object_to_json_string(jobj);
+    send(*kodisock,output,strlen(output),0);
 
 
 }
