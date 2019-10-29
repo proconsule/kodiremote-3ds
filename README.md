@@ -1,5 +1,7 @@
+<img src="https://i.imgur.com/zfCJmJf.png" width="350" title="kodiremote-3ds-remotemenu">
+<img src="https://i.imgur.com/yXouFqf.png" width="350" title="kodiremote-3ds-movielibbottom">
+<img src="https://i.imgur.com/TLVO2hh.png" width="350" title="kodiremote-3ds-movielibtop">
 
-<img src="https://i.imgur.com/J3rR01h.png" width="350" title="kodiremote-3ds">
 
 kodiremote-3ds is a simple (N)3DS remote control for Kodi (formerly known as XBMC)
 it use the WebSocket port to control Kodi (port 9090 is the default port)
