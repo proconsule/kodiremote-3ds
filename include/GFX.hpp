@@ -33,8 +33,6 @@ public:
     int RemoteMenutouchSprite(touchPosition *touch);
 
     C2D_SpriteSheet RemoteMenuspriteSheet;
-    //Sprite sprites[9];
-
     std::vector<Sprite> remotemenuspritevector;
 
 

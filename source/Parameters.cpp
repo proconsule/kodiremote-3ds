@@ -67,6 +67,8 @@ void CParameters::Save_Config(const char* configfile){
         fprintf(fp,"kodiaddress %s\n",kodiaddress);
 		fprintf(fp,"kodiport %d\n",kodiport);
         fprintf(fp,"kodihttpport %d\n",kodihttpport);
+        int bollconv = downloadimages;
+        fprintf(fp,"downloadimages %d\n",bollconv);
 
 
 
@@ -103,9 +105,11 @@ int CParameters::Read_Config(const char* configfile){
         if(strcmp(myopt,"kodihttpport") == 0){
            sscanf(line,"%*s %d",&kodihttpport);
         }
-
-
-
+        if(strcmp(myopt,"downloadimages") == 0){
+            int boolconv;
+            sscanf(line,"%*s %d",&boolconv);
+            downloadimages = boolconv;
+        }
 
        }
 
@@ -124,9 +128,32 @@ void CParameters::Init(){
     kodihttpport = 8080;
     sprintf(kodiaddress,"127.0.0.1");
     runThreads = true;
+    downloadimages = true;
     KodiRPC = new CKodiRPC();
+    KodiRPC->runThreads = &runThreads;
     KodiRPC->kodiaddress = kodiaddress;
     KodiRPC->kodihttpport = &kodihttpport;
+
+    AudioLib = new CAudioLib();
+    MovieLib = new CMovieLib();
+    TVShowLib = new CTVShowLib();
+
+    KodiRPC->AudioLib = AudioLib;
+    KodiRPC->MovieLib = MovieLib;
+    KodiRPC->TVShowLib = TVShowLib;
+
+
+    AudioLib->kodiaddress = kodiaddress;
+    AudioLib->kodihttpport = &kodihttpport;
+
+    MovieLib->kodiaddress = kodiaddress;
+    MovieLib->kodihttpport = &kodihttpport;
+
+    TVShowLib->kodiaddress = kodiaddress;
+    TVShowLib->kodihttpport = &kodihttpport;
+
+
+    MovieLib->Init();
 }
 
 

@@ -46,153 +46,18 @@ Result myret;
 
 CParameters Parameters;
 
-#define KODICONFFILE "kodiremote-3ds.conf"
+
 
 
 void socShutdown() {
-    //---------------------------------------------------------------------------------
-    printf("waiting for socExit...\n");
+
     socExit();
 
 }
 
 
 
-void startMenu(C3D_RenderTarget* target,C3D_RenderTarget* top,CConsoleMenu *Menu){
 
-	menu_struct menu;
-	menu.menupos = 0;
-	menu.currmenuid = 0;
-
-	while (aptMainLoop())
-	{
-		static SwkbdState swkbd;
-		static char mybuf[60];
-		SwkbdButton button = SWKBD_BUTTON_NONE;
-		bool diditip = false;
-        bool diditwsport = false;
-        bool didithttpport = false;
-
-
-        C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-        C2D_TargetClear(top, C2D_Color32(0x68, 0xB0, 0xD8, 0xFF));
-        C2D_SceneBegin(top);
-        C3D_FrameEnd(0);
-		hidScanInput();
-		u32 kDown = hidKeysDown();
-        Menu->GUIStartMenu(target,&menu);
-
-		if (kDown & KEY_A){
-			if(menu.menupos == 0){
-				diditip = true;
-				swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, -1);
-				swkbdSetInitialText(&swkbd, Parameters.kodiaddress);
-				swkbdSetHintText(&swkbd, "Enter Kodi Address");
-				swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
-				swkbdSetButton(&swkbd, SWKBD_BUTTON_MIDDLE, "OK", true);
-
-				button = swkbdInputText(&swkbd, mybuf, sizeof(mybuf));
-			}
-            if(menu.menupos == 1){
-                diditwsport = true;
-                swkbdInit(&swkbd, SWKBD_TYPE_NUMPAD, 1, 8);
-                swkbdSetValidation(&swkbd, SWKBD_ANYTHING, 0, 0);
-                swkbdSetFeatures(&swkbd, SWKBD_FIXED_WIDTH);
-                swkbdSetNumpadKeys(&swkbd, L'ツ', L'益');
-                swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
-                swkbdSetButton(&swkbd, SWKBD_BUTTON_MIDDLE, "OK", true);
-                button = swkbdInputText(&swkbd, mybuf, sizeof(mybuf));
-            }
-
-            if(menu.menupos == 2){
-                didithttpport = true;
-                swkbdInit(&swkbd, SWKBD_TYPE_NUMPAD, 1, 8);
-                swkbdSetValidation(&swkbd, SWKBD_ANYTHING, 0, 0);
-                swkbdSetFeatures(&swkbd, SWKBD_FIXED_WIDTH);
-                swkbdSetNumpadKeys(&swkbd, L'ツ', L'益');
-                button = swkbdInputText(&swkbd, mybuf, sizeof(mybuf));
-            }
-
-
-
-			if(menu.menupos == menu.currmenumax-2){
-				Parameters.Save_Config(KODICONFFILE);
-				break;
-			}
-
-			if(menu.menupos == menu.currmenumax-1){
-				break;
-			}
-		}
-
-		if (kDown & KEY_DOWN){
-			if(menu.menupos >= menu.currmenumax-1){
-			   menu.menupos = 0;
-			}else{
-				menu.menupos++;
-			}
-		}
-
-		if (kDown & KEY_UP){
-			if(menu.menupos < 1){
-			   menu.menupos = menu.currmenumax-1;
-			}else
-			{
-				menu.menupos--;
-			}
-		}
-
-		if (diditip)
-		{
-			if (button != SWKBD_BUTTON_NONE)
-			{
-				if(menu.menupos == 0){
-				   sscanf(mybuf,"%s",Parameters.kodiaddress);
-				}
-
-
-
-			} else{
-
-			}
-
-		}
-        if (diditwsport)
-        {
-            if (button != SWKBD_BUTTON_NONE)
-            {
-                if(menu.menupos == 1){
-                   sscanf(mybuf,"%d",&Parameters.kodiport);
-                }
-
-
-
-            } else{
-
-            }
-
-        }
-        if (didithttpport)
-        {
-            if (button != SWKBD_BUTTON_NONE)
-            {
-                if(menu.menupos == 2){
-                   sscanf(mybuf,"%d",&Parameters.kodihttpport);
-                }
-
-
-
-            } else{
-
-            }
-        }
-
-	}
-
-
-
-
-}
 
 
 
@@ -230,7 +95,7 @@ int main(){
 
 
 
-    startMenu(bottom,top,&Menu);
+    Menu.startMenu(bottom,top,&Menu);
 
     CKodiSocket KodiSocket;
 
@@ -259,9 +124,17 @@ int main(){
 
 
     Parameters.KodiRPC->kodisock = &KodiSocket.sock;
+    Parameters.AudioLib->kodisock = &KodiSocket.sock;
+    Parameters.MovieLib->kodisock = &KodiSocket.sock;
+    Parameters.TVShowLib->kodisock = &KodiSocket.sock;
+    Parameters.KodiRPC->Init();
+
+    Parameters.KodiRPC->currmenuid = &Menu.currmenuid;
+
 
     KodiSocket.Init(prio);
 
+    Parameters.KodiRPC->InitThread(prio);
 
 
     while (aptMainLoop())
@@ -279,14 +152,33 @@ int main(){
 
 
 
+
         if(Menu.currmenuid == VIDEOLIBRARYLISTMENU){
             Menu.GUIMenuVideoLibrary(bottom);
         }
+        else if(Menu.currmenuid == TVSHOWLIBRARYEPISODEMENU){
+            Menu.GUIMenuTVShowEpisode(bottom);
+        }
+        else if(Menu.currmenuid == TVSHOWLIBRARYSEASONMENU){
+            Menu.GUIMenuTVShowSeason(bottom);
+        }
+        else if(Menu.currmenuid == TVSHOWLIBRARYLISTMENU){
+            Menu.GUIMenuTVShowLibrary(bottom);
+        }
+        else if(Menu.currmenuid == AUDIOLIBRARYLISTMENU){
+            Menu.GUIMenuAudioLibrary(bottom);
+        }
+        else if(Menu.currmenuid == AUDIOLIBRARYALBUMMENU){
+            Menu.GUIMenuAudioAlbum(bottom);
+        }
+        else if(Menu.currmenuid == AUDIOLIBRARYSONGMENU){
+            Menu.GUIMenuAudioSong(bottom);
+        }
+
         else if(Menu.currmenuid == REMOTEMENU){
-            C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-            C2D_TargetClear(top, C2D_Color32(0x68, 0xB0, 0xD8, 0xFF));
-            C2D_SceneBegin(top);
-            C3D_FrameEnd(0);
+
+            Menu.DebugTop(top);
+
             C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
             C2D_TargetClear(bottom, C2D_Color32(0x68, 0xB0, 0xD8, 0xFF));
             C2D_SceneBegin(bottom);
@@ -379,18 +271,26 @@ int main(){
             Menu.currmenumax = Menu.MenuItems(Menu.currmenuid);
             //printf(myout);
             //free(myout);
-            C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+
+            if(Menu.currmenuid == MAINMENU){
+                Menu.DebugTop(top);
+            }else
+            {
+                C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
             C2D_TargetClear(top, C2D_Color32(0x68, 0xB0, 0xD8, 0xFF));
             C2D_SceneBegin(top);
             C3D_FrameEnd(0);
+            }
+            /*
 
+            */
 
             Menu.GUIMenu(bottom,Menu.currmenuid);
         }
 
 
 		if (kDown & KEY_SELECT){
-            Parameters.KodiRPC->RequestMovieList();
+            //Parameters.KodiRPC->RequestMovieList();
 
 		}
 
@@ -429,15 +329,103 @@ int main(){
                 }
                 else if(Menu.currmenuid == VIDEOLIBRARYLISTMENU){
                         if(Menu.movielistpos <1){
-                            Menu.movielistpos = Parameters.KodiRPC->kodivideolib.size()-1;
+                            Menu.movielistpos = Parameters.MovieLib->kodivideolib.size()-1;
                         }
                         else
                         {
                             Menu.movielistpos--;
                         }
-                        if(Parameters.KodiRPC->kodivideolib.size()>0){
-                            Parameters.KodiRPC->CreateThumbTexture(Menu.movielistpos);
+                        if(Parameters.MovieLib->kodivideolib.size()>0){
+                            if(Parameters.downloadimages){
+                                Parameters.MovieLib->CreateThumbTexture(Menu.movielistpos);
+                                Parameters.MovieLib->CreateFanArtTexture(Menu.movielistpos);
+                            }
                         }
+
+
+                }
+                else if(Menu.currmenuid == AUDIOLIBRARYLISTMENU){
+                        if(Menu.audioartistpos <1){
+                            Menu.audioartistpos = Parameters.AudioLib->artistslib.size()-1;
+                        }
+                        else
+                        {
+                            Menu.audioartistpos--;
+                        }
+                        if(Parameters.AudioLib->artistslib.size()>0){
+
+                        }
+
+
+                }
+                else if(Menu.currmenuid == AUDIOLIBRARYALBUMMENU){
+                        if(Menu.audioalbumpos <1){
+                            Menu.audioalbumpos = Parameters.AudioLib->artistslib[Menu.audioartistpos].albums.size()-1;
+                        }
+                        else
+                        {
+                            Menu.audioalbumpos--;
+                        }
+                        if(Parameters.AudioLib->artistslib[Menu.audioartistpos].albums.size()>0){
+
+                        }
+
+
+                }
+                else if(Menu.currmenuid == AUDIOLIBRARYSONGMENU){
+                        if(Menu.audiosongpos <1){
+                            Menu.audiosongpos = Parameters.AudioLib->artistslib[Menu.audioartistpos].albums[Menu.audioalbumpos].songs.size()-1;
+                        }
+                        else
+                        {
+                            Menu.audiosongpos--;
+                        }
+                        if(Parameters.AudioLib->artistslib[Menu.audioartistpos].albums[Menu.audioalbumpos].songs.size()>0){
+
+                        }
+
+
+                }
+                else if(Menu.currmenuid == TVSHOWLIBRARYLISTMENU){
+                        if(Menu.tvshowlistpos <1){
+                            Menu.tvshowlistpos = Parameters.TVShowLib->koditvshowlib.size()-1;
+                        }
+                        else
+                        {
+                            Menu.tvshowlistpos--;
+                        }
+                        if(Parameters.TVShowLib->koditvshowlib.size()>0){
+                            if(Parameters.downloadimages){
+                            Parameters.TVShowLib->CreateThumbTexture(Menu.tvshowlistpos);
+                            Parameters.TVShowLib->CreateFanArtTexture(Menu.tvshowlistpos);
+                        }
+                        }
+
+
+                }
+                else if(Menu.currmenuid == TVSHOWLIBRARYSEASONMENU){
+                        if(Menu.tvshowseasonpos <1){
+                            Menu.tvshowseasonpos = Parameters.TVShowLib->koditvshowlib[Menu.tvshowlistpos].seasons.size()-1;
+                        }
+                        else
+                        {
+                            Menu.tvshowseasonpos--;
+                        }
+
+
+
+                }
+                else if(Menu.currmenuid == TVSHOWLIBRARYEPISODEMENU){
+                        if(Menu.tvshowepisodepos <1){
+                            Menu.tvshowepisodepos = Parameters.TVShowLib->koditvshowlib[Menu.tvshowlistpos].seasons[Menu.tvshowseasonpos].episodes.size()-1;
+                        }
+                        else
+                        {
+                            Menu.tvshowepisodepos--;
+                        }
+                        //if(Parameters.TVShowLib->koditvshowlib.size()>0){
+                        //    Parameters.TVShowLib->CreateThumbTexture(Menu.tvshowlistpos);
+                        //}
 
 
                 }
@@ -459,16 +447,102 @@ int main(){
 
                 }
                 else if(Menu.currmenuid == VIDEOLIBRARYLISTMENU){
-                        if((unsigned int)Menu.movielistpos >= Parameters.KodiRPC->kodivideolib.size()-1){
+                        if((unsigned int)Menu.movielistpos >= Parameters.MovieLib->kodivideolib.size()-1){
                             Menu.movielistpos = 0;
                         }
                         else
                         {
                             Menu.movielistpos++;
                         }
-                    if(Parameters.KodiRPC->kodivideolib.size()>0){
-                        Parameters.KodiRPC->CreateThumbTexture(Menu.movielistpos);
+                    if(Parameters.MovieLib->kodivideolib.size()>0){
+                        if(Parameters.downloadimages){
+                            Parameters.MovieLib->CreateThumbTexture(Menu.movielistpos);
+                            Parameters.MovieLib->CreateFanArtTexture(Menu.movielistpos);
+                        }
                     }
+
+
+                }
+                else if(Menu.currmenuid == AUDIOLIBRARYLISTMENU){
+                        if((unsigned int)Menu.audioartistpos >= Parameters.AudioLib->artistslib.size()-1){
+                            Menu.audioartistpos = 0;
+                        }
+                        else
+                        {
+                            Menu.audioartistpos++;
+                        }
+                    if(Parameters.AudioLib->artistslib.size()>0){
+
+                    }
+
+
+                }
+                else if(Menu.currmenuid == AUDIOLIBRARYALBUMMENU){
+                        if((unsigned int)Menu.audioalbumpos >= Parameters.AudioLib->artistslib[Menu.audioartistpos].albums.size()-1){
+                            Menu.audioalbumpos = 0;
+                        }
+                        else
+                        {
+                            Menu.audioalbumpos++;
+                        }
+                    if(Parameters.AudioLib->artistslib[Menu.audioartistpos].albums.size()>0){
+
+                    }
+
+
+                }
+                else if(Menu.currmenuid == AUDIOLIBRARYSONGMENU){
+                        if((unsigned int)Menu.audiosongpos >= Parameters.AudioLib->artistslib[Menu.audioartistpos].albums[Menu.audioalbumpos].songs.size()-1){
+                            Menu.audiosongpos = 0;
+                        }
+                        else
+                        {
+                            Menu.audiosongpos++;
+                        }
+                    if(Parameters.AudioLib->artistslib[Menu.audioartistpos].albums[Menu.audioalbumpos].songs.size()>0){
+
+                    }
+
+
+                }
+                else if(Menu.currmenuid == TVSHOWLIBRARYLISTMENU){
+                        if((unsigned int)Menu.tvshowlistpos >= Parameters.TVShowLib->koditvshowlib.size()-1){
+                            Menu.tvshowlistpos = 0;
+                        }
+                        else
+                        {
+                            Menu.tvshowlistpos++;
+                        }
+                    if(Parameters.TVShowLib->koditvshowlib.size()>0){
+                        if(Parameters.downloadimages){
+                            Parameters.TVShowLib->CreateThumbTexture(Menu.tvshowlistpos);
+                            Parameters.TVShowLib->CreateFanArtTexture(Menu.tvshowlistpos);
+                        }
+                    }
+
+
+                }
+                else if(Menu.currmenuid == TVSHOWLIBRARYSEASONMENU){
+                        if((unsigned int)Menu.tvshowseasonpos >= Parameters.TVShowLib->koditvshowlib[Menu.tvshowlistpos].seasons.size()-1){
+                            Menu.tvshowseasonpos = 0;
+                        }
+                        else
+                        {
+                            Menu.tvshowseasonpos++;
+                        }
+
+
+
+                }
+                else if(Menu.currmenuid == TVSHOWLIBRARYEPISODEMENU){
+                        if((unsigned int)Menu.tvshowepisodepos >= Parameters.TVShowLib->koditvshowlib[Menu.tvshowlistpos].seasons[Menu.tvshowseasonpos].episodes.size()-1){
+                            Menu.tvshowepisodepos = 0;
+                        }
+                        else
+                        {
+                            Menu.tvshowepisodepos++;
+                        }
+
 
 
                 }
@@ -483,30 +557,127 @@ int main(){
 
         }
 
+        if (kDown & KEY_X){
+            if(Menu.currmenuid == TVSHOWLIBRARYSEASONMENU){
+               Parameters.TVShowLib->PlaySeason(Parameters.TVShowLib->koditvshowlib[Menu.tvshowlistpos].seasons[Menu.tvshowseasonpos].seasonid);
+            }
+
+        }
+
         if (kDown & KEY_A){
                 if(Menu.currmenuid == MAINMENU && Menu.menupos == Menu.currmenumax-1){
                     break;
                 }
+                if(Menu.currmenuid == MAINMENU && Menu.menupos == Menu.currmenumax-2){
+                    Menu.startMenu(bottom,top,&Menu);
+                    continue;
+
+                }
+
 
                 if(Menu.currmenuid == REMOTEMENU){
                     Parameters.KodiRPC->CreateMessageInputKey(KODI_KEYSELECT);
 
                 }
 
-                if(Menu.currmenuid == VIDEOLIBRARYLISTMENU){
-                    Parameters.KodiRPC->PlayMovie(Parameters.KodiRPC->kodivideolib[Menu.movielistpos].movieid);
+                if(Menu.currmenuid == AUDIOLIBRARYALBUMMENU){
+                    Menu.audiosongpos = 0;
+                    Menu.currmenuid = AUDIOLIBRARYSONGMENU;
+                }
+
+                if(Menu.currmenuid == AUDIOLIBRARYLISTMENU){
+                    Menu.audioalbumpos = 0;
+                    Menu.currmenuid = AUDIOLIBRARYALBUMMENU;
+                }
+
+
+                if(Menu.currmenuid == AUDIOLIBRARYSONGMENU){
+                    Parameters.AudioLib->PlaySong(Parameters.AudioLib->artistslib[Menu.audioartistpos].albums[Menu.audioalbumpos].songs[Menu.audiosongpos].songid);
 
                 }
 
 
+                if(Menu.currmenuid == VIDEOLIBRARYLISTMENU){
+                    Parameters.MovieLib->PlayMovie(Parameters.MovieLib->kodivideolib[Menu.movielistpos].movieid);
+
+                }
+
+                if(Menu.currmenuid == TVSHOWLIBRARYEPISODEMENU){
+                    Parameters.TVShowLib->PlayEpisode(Parameters.TVShowLib->koditvshowlib[Menu.tvshowlistpos].seasons[Menu.tvshowseasonpos].episodes[Menu.tvshowepisodepos].episodeid);
+
+                }
+
+                if(Menu.currmenuid == TVSHOWLIBRARYSEASONMENU){
+                    Menu.tvshowepisodepos = 0;
+                       Menu.currmenuid = TVSHOWLIBRARYEPISODEMENU;
+                }
+
+                if(Menu.currmenuid == TVSHOWLIBRARYLISTMENU){
+                    Menu.tvshowseasonpos = 0;
+                   Menu.currmenuid = TVSHOWLIBRARYSEASONMENU;
+                }
+
+
+                if(Menu.currmenuid == AUDIOLIBRARYMENU && Menu.menupos == 0){
+                    if(Parameters.AudioLib->artistslib.size()>0){
+
+                    }else{
+                    std::string statusmsg("Requesting Audio List");
+                    Menu.StatusMsg(bottom,statusmsg,statusmsg,statusmsg);
+                    Parameters.AudioLib->RequestAudioList();
+                    sleep(1);
+                    }
+                }
+
+                if(Menu.currmenuid == AUDIOLIBRARYMENU && Menu.menupos == 1){
+                    std::string statusmsg("Requesting Audio List");
+                    Menu.StatusMsg(bottom,statusmsg,statusmsg,statusmsg);
+                    Parameters.AudioLib->RequestAudioList();
+                    sleep(1);
+                }
+
+
+                if(Menu.currmenuid == TVSHOWLIBRARYMENU && Menu.menupos == 1){
+                    std::string statusmsg("Requesting TV Shows List");
+                    Menu.StatusMsg(bottom,statusmsg,statusmsg,statusmsg);
+
+                    Parameters.TVShowLib->RequestTVShowList();
+                    sleep(1);
+                    for(unsigned int i=0;i<Parameters.TVShowLib->koditvshowlib.size();i++){
+
+                        if(Parameters.downloadimages){
+                            std::string debugstring("Downloading Poster"); Menu.GUIVideoRefresh(bottom,Parameters.TVShowLib->koditvshowlib[i].label,debugstring,i,Parameters.TVShowLib->koditvshowlib.size());
+                            Parameters.TVShowLib->DownloadThumb(i);
+                            std::string debugstring2("Downloading and Resizing Fanart");
+                            Menu.GUIVideoRefresh(bottom,Parameters.TVShowLib->koditvshowlib[i].label,debugstring2,i,Parameters.TVShowLib->koditvshowlib.size());
+                            Parameters.TVShowLib->DownloadFanArt(i);
+                        }
+
+                    }
+                    for(unsigned int i=0;i<Parameters.TVShowLib->koditvshowlib.size();i++){
+                        Parameters.TVShowLib->RequestTVShowEpisodesList(Parameters.TVShowLib->koditvshowlib[i].showid);
+                        //sleep(1);
+                        usleep(100000);
+                    }
+
+                }
+
                 if(Menu.currmenuid == VIDEOLIBRARYMENU && Menu.menupos == 1){
 
-                    Parameters.KodiRPC->RequestMovieList();
+                    std::string statusmsg("Requesting Movies List");
+                    Menu.StatusMsg(bottom,statusmsg,statusmsg,statusmsg);
+                    Parameters.MovieLib->RequestMovieList();
                     sleep(1);
-                    for(unsigned int i=0;i<Parameters.KodiRPC->kodivideolib.size();i++){
-                        Menu.GUIVideoRefresh(bottom,Parameters.KodiRPC->kodivideolib[i].label,i,Parameters.KodiRPC->kodivideolib.size());
+                    for(unsigned int i=0;i<Parameters.MovieLib->kodivideolib.size();i++){
 
-                        Parameters.KodiRPC->DownloadMovieThumb(i);
+
+                        if(Parameters.downloadimages){
+                            std::string debugstring("Downloading Poster"); Menu.GUIVideoRefresh(bottom,Parameters.MovieLib->kodivideolib[i].label,debugstring,i,Parameters.MovieLib->kodivideolib.size());
+                            Parameters.MovieLib->DownloadThumb(i);
+                            std::string debugstring2("Downloading and Resizing Fanart");
+                            Menu.GUIVideoRefresh(bottom,Parameters.MovieLib->kodivideolib[i].label,debugstring2,i,Parameters.MovieLib->kodivideolib.size());
+                            Parameters.MovieLib->DownloadFanArt(i);
+                        }
                     }
 
                 }
@@ -514,9 +685,67 @@ int main(){
                 if(Menu.currmenuid == VIDEOLIBRARYMENU && Menu.menupos == 0){
 
                     Parameters.KodiRPC->currvideolibid = 0;
-                    if(Parameters.KodiRPC->kodivideolib.size()>0){
-                        Parameters.KodiRPC->CreateThumbTexture(Menu.movielistpos);
+                    if(Parameters.MovieLib->kodivideolib.size()>0){
+
+
+                    }else{
+                        std::string statusmsg("Requesting Movies List");
+                        Menu.StatusMsg(bottom,statusmsg,statusmsg,statusmsg);
+                        Parameters.MovieLib->RequestMovieList();
+                        sleep(1);
+                        for(unsigned int i=0;i<Parameters.MovieLib->kodivideolib.size();i++){
+
+
+                            if(Parameters.downloadimages){
+                                std::string debugstring("Downloading Poster"); Menu.GUIVideoRefresh(bottom,Parameters.MovieLib->kodivideolib[i].label,debugstring,i,Parameters.MovieLib->kodivideolib.size());
+                                Parameters.MovieLib->DownloadThumb(i);
+                                std::string debugstring2("Downloading and Resizing Fanart");
+                                Menu.GUIVideoRefresh(bottom,Parameters.MovieLib->kodivideolib[i].label,debugstring2,i,Parameters.MovieLib->kodivideolib.size());
+                                Parameters.MovieLib->DownloadFanArt(i);
+                            }
+                        }
                     }
+                    if(Parameters.downloadimages){
+                        Parameters.MovieLib->CreateThumbTexture(Menu.movielistpos);
+                        Parameters.MovieLib->CreateFanArtTexture(Menu.movielistpos);
+                    }
+                }
+
+                if(Menu.currmenuid == TVSHOWLIBRARYMENU && Menu.menupos == 0){
+
+                    Parameters.KodiRPC->currvideolibid = 0;
+                    if(Parameters.TVShowLib->koditvshowlib.size()>0){
+
+
+                    }else
+                    {
+                        std::string statusmsg("Requesting TV Shows List");
+                        Menu.StatusMsg(bottom,statusmsg,statusmsg,statusmsg);
+                        Parameters.TVShowLib->RequestTVShowList();
+                         sleep(1);
+                         for(unsigned int i=0;i<Parameters.TVShowLib->koditvshowlib.size();i++){
+
+                             if(Parameters.downloadimages){
+                                std::string debugstring("Downloading Poster"); Menu.GUIVideoRefresh(bottom,Parameters.TVShowLib->koditvshowlib[i].label,debugstring,i,Parameters.TVShowLib->koditvshowlib.size());
+                                Parameters.TVShowLib->DownloadThumb(i);
+                                std::string debugstring2("Downloading and Resizing Fanart");
+                                Menu.GUIVideoRefresh(bottom,Parameters.TVShowLib->koditvshowlib[i].label,debugstring2,i,Parameters.TVShowLib->koditvshowlib.size());
+                                Parameters.TVShowLib->DownloadFanArt(i);
+                             }
+                         }
+                         for(unsigned int i=0;i<Parameters.TVShowLib->koditvshowlib.size();i++){
+                             Parameters.TVShowLib->RequestTVShowEpisodesList(Parameters.TVShowLib->koditvshowlib[i].showid);
+                             //sleep(1);
+                             usleep(100000);
+                         }
+
+
+                    }
+                    if(Parameters.downloadimages){
+                        Parameters.TVShowLib->CreateThumbTexture(Menu.tvshowlistpos);
+                        Parameters.TVShowLib->CreateFanArtTexture(Menu.tvshowlistpos);
+                    }
+
                 }
 
                 if(Menu.HaveSubmenu(Menu.currmenuid,Menu.menupos) == false){
@@ -547,33 +776,39 @@ int main(){
         }
 
 
-
-
-
 		if(Menu.currmenuid == VIDEOLIBRARYLISTMENU){
 
             Menu.VideoLibRender(top,Menu.movielistpos);
 		}
+		if(Menu.currmenuid == TVSHOWLIBRARYLISTMENU || Menu.currmenuid == TVSHOWLIBRARYSEASONMENU){
+
+            Menu.TVShowLibRender(top,Menu.tvshowlistpos);
+		}
+        if(Menu.currmenuid == TVSHOWLIBRARYEPISODEMENU){
+            Menu.TVShowEpisodeRender(top,Menu.tvshowepisodepos);
+        }
 
 
 
     }
 
     Parameters.runThreads = false;
-    printf("Exit Main Thread LOOP\n");
     sleep(1);
 
+/*
+    threadJoin(Parameters.KodiRPC->thread, U64_MAX);
+    threadFree(Parameters.KodiRPC->thread);
 
     threadJoin(KodiSocket.thread, U64_MAX);
     threadFree(KodiSocket.thread);
-
+*/
 
     socShutdown();
+    romfsExit();
     C2D_SpriteSheetFree(GFX->RemoteMenuspriteSheet);
     C2D_Fini();
 	C3D_Fini();
     gfxExit();
-    romfsExit();
     return 0;
 }
 

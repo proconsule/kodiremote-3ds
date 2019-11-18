@@ -28,7 +28,7 @@
 #include <3ds.h>
 #include "Parameters.hpp"
 
-#define STACKSIZE (10 * 1024)
+
 
 class CKodiSocket{
 public:
@@ -42,4 +42,4 @@ public:
 };
 
 
-#endif /* KodiSocket_hpp */
+#endif

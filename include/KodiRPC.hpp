@@ -30,13 +30,25 @@
 
 #include <3ds.h>
 
+#include "Library.hpp"
+
+typedef void  (*THREADFUNCPTR)(void *);
+#define STACKSIZE (10 * 1024)
+
 
 enum MSGIDS{
     INPUTKEY = 1000,
     VOLUME = 101,
     VERSION = 102,
     PLAYMOVIE = 201,
-    PLAYER = 202
+    PLAYEPISODE = 202,
+    PLAYSONG = 203,
+    PLAYER = 302,
+    QUERYPLAYER = 303,
+    QUERYVIDEOPLAYERSTATUS = 304,
+    QUERYVIDEOPLAYERTIME = 305,
+    QUERYAUDIOPLAYERSTATUS = 306,
+    QUERYAUDIOPLAYERTIME = 307
 
 
 
@@ -66,41 +78,58 @@ typedef struct{
 
 }kodiversion_struct;
 
-struct MemoryStruct {
-  char *memory;
-  size_t size;
-};
+typedef struct{
+    int hour;
+    int minutes;
+    int seconds;
+    int millisec;
 
-struct ImageMemoryStruct {
-  char *memory;
-  size_t size;
-  int width;
-  int height;
-};
+}playtime_struct;
 
 typedef struct{
-    std::string label;
-    int movieid;
+    char *showtitle;
+    char *label;
+    char *type;
+    int tvshowid;
+    int season;
+    int episode;
+    int id;
+    playtime_struct currenttime;
+    playtime_struct totaltime;
+    double perc;
+
+
+}videostatus_struct;
+
+typedef struct{
+    char *title;
+    char *album;
+    char *artist;
+    char *type;
     int year;
-    std::string thumburl;
-    std::string plot;
-    MemoryStruct jpegref;
+    int track;
+    playtime_struct currenttime;
+    playtime_struct totaltime;
+    double perc;
 
-
-}kodivideolib_struct;
-
-typedef struct{
-    C2D_Image thumbtext;
-    int width;
-    int height;
-
-}thumbimage_struct;
-
+}audiostatus_struct;
 
 
 class CKodiRPC{
 public:
     void Init();
+
+    Thread thread;
+    void *PlayerStatusThread(void *arg);
+    bool *runThreads;
+    void InitThread(s32 prio);
+    bool SocketFree;
+    int *currmenuid;
+    int playerid;
+
+    videostatus_struct player_viseostatus;
+    audiostatus_struct player_audiostatus;
+
 
 
     void CreateMessageInputKey(InputKeys Key);
@@ -113,9 +142,9 @@ public:
 
     bool done;
     void ParseJson(char *buffer);
-    bool ParseGetMovies(char *buffer);
-    void RequestMovieList();
-    void PlayMovie(int movieid);
+    //bool ParseGetMovies(char *buffer);
+
+
 
     void PlayerPlayPayse();
     void PlayerStop();
@@ -123,26 +152,17 @@ public:
     void PlayerSeekRev();
 
 
-    std::vector<kodivideolib_struct> kodivideolib;
-
-    void DownloadMovieThumb(int movienum);
-    void CreateThumbTexture(int movienum);
-    void JpegDecompress(MemoryStruct *source,ImageMemoryStruct *dest);
-
-    bool Draw_LoadImageMemory(C2D_Image *texture, ImageMemoryStruct *source);
-    void TurboJpegDecompress(MemoryStruct *source,ImageMemoryStruct *dest);
-
-    //C2D_Image thumbtext;
-    thumbimage_struct thumbimage;
-
     std::string wrap(const char *text, size_t line_length);
-
-    static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
 
     int *kodisock;
 
     char * kodiaddress;
     int * kodihttpport;
+
+
+    CAudioLib *AudioLib;
+    CMovieLib *MovieLib;
+    CTVShowLib *TVShowLib;
 
 
 };

@@ -31,23 +31,46 @@ include $(DEVKITARM)/3ds_rules
 #     - icon.png
 #     - <libctru folder>/default_icon.png
 #---------------------------------------------------------------------------------
+
+APP_TITLE           :=	KodiRemote-3DS
+APP_DESCRIPTION     :=	Kodi Remote Controller (N)3DS (ALPHA Version)
+APP_AUTHOR          :=	proconsule
+
+VERSION_MAJOR	:=	0
+VERSION_MINOR	:=	4
+VERSION_MICRO	:=	0
+
+
 TARGET		:=	$(notdir $(CURDIR))
+OUTDIR		:=  out
 BUILD		:=	build
 SOURCES		:=	source
 DATA		:=	data
 INCLUDES	:=	include
-GRAPHICS	:=	gfx
+GRAPHICS	:=	assets/gfx
 #GFXBUILD	:=	$(BUILD)
-ROMFS		:=	romfs
+ROMFS		:=	assets/romfs
 GFXBUILD	:=	$(ROMFS)/gfx
+
+ICON		:=	assets/icon.png
+
+BANNER_AUDIO	:=	assets/audio.wav
+BANNER_IMAGE	:=	assets/banner.png
+RSF_PATH		:=	assets/app.rsf
+
+LOGO			:=	assets/splash.bin
+
+# If left blank, makerom will use default values (0xff3ff and CTR-P-CTAP, respectively)
+UNIQUE_ID		:=	0xff3ff
+PRODUCT_CODE	:=	CTR-HB-KREM
+
+ICON_FLAGS          :=	nosavebackups,visible
+
 
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
 
-APP_TITLE           :=	KodiRemote-3DS
-APP_DESCRIPTION     :=	Kodi Remote Controller (N)3DS (ALPHA Version)
-APP_AUTHOR          :=	proconsule
 
 ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 
@@ -63,6 +86,7 @@ ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
 LIBS	:=  -lcitro2d -lcitro3d -lcurl -lz -lmbedx509 -lmbedtls -lmbedcrypto -ljson-c -ljpeg -lturbojpeg -lcitro3d -lctru -lm
+#LIBS	:=  -lcitro2dd -lcitro3dd -lcurl -lz -lmbedx509 -lmbedtls -lmbedcrypto -ljson-c -ljpeg -lturbojpeg -lctrud -lm
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
@@ -78,7 +102,7 @@ LIBDIRS	:= $(CTRULIB) $(DEVKITPRO)/portlibs/3ds
 ifneq ($(BUILD),$(notdir $(CURDIR)))
 #---------------------------------------------------------------------------------
 
-export OUTPUT	:=	$(CURDIR)/$(TARGET)
+export OUTPUT	:=	$(CURDIR)/$(OUTDIR)/$(TARGET)
 export TOPDIR	:=	$(CURDIR)
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
@@ -156,7 +180,7 @@ else
 endif
 
 ifeq ($(strip $(NO_SMDH)),)
-	export _3DSXFLAGS += --smdh=$(CURDIR)/$(TARGET).smdh
+	export _3DSXFLAGS += --smdh=$(CURDIR)/$(OUTDIR)/$(TARGET).smdh
 endif
 
 ifneq ($(ROMFS),)
@@ -167,8 +191,9 @@ endif
 
 #---------------------------------------------------------------------------------
 all: $(BUILD) $(GFXBUILD) $(DEPSDIR) $(ROMFS_T3XFILES) $(T3XHFILES)
+	@mkdir -p $(BUILD) $(GFXBUILD) $(OUTDIR)
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
-
+	
 $(BUILD):
 	@mkdir -p $@
 
@@ -182,10 +207,16 @@ $(DEPSDIR):
 	@mkdir -p $@
 endif
 
+cia:
+	@bannertool makebanner -i "$(BANNER_IMAGE)" -a "$(BANNER_AUDIO)" -o $(BUILD)/banner.bnr
+	@bannertool makesmdh -s "$(APP_TITLE)" -l "$(APP_DESCRIPTION)" -p "$(APP_AUTHOR)" -i "$(APP_ICON)" -f "$(ICON_FLAGS)" -o $(BUILD)/icon.icn
+	@makerom -f cia -o $(OUTPUT).cia -target t -exefslogo -elf "$(OUTPUT).elf" -rsf "$(RSF_PATH)" -ver "$$(($(VERSION_MAJOR)*1024+$(VERSION_MINOR)*16+$(VERSION_MICRO)))" -banner "$(BUILD)/banner.bnr" -icon "$(BUILD)/icon.icn" -DAPP_TITLE="$(APP_TITLE)" -DAPP_PRODUCT_CODE="$(PRODUCT_CODE)" -DAPP_UNIQUE_ID="$(UNIQUE_ID)" -logo "$(LOGO)"
+
+
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).3dsx $(OUTPUT).smdh $(TARGET).elf $(GFXBUILD)
+	@rm -fr $(BUILD) @rm -fr $(BUILD) $(OUTDIR) $(GFXBUILD)
 
 #---------------------------------------------------------------------------------
 $(GFXBUILD)/%.t3x	$(BUILD)/%.h	:	%.t3s

@@ -8,7 +8,7 @@
 
 #include "KodiSocket.hpp"
 
-typedef void  (*THREADFUNCPTR)(void *);
+
 
 
 void CKodiSocket::Init(s32 prio){
@@ -83,17 +83,17 @@ void *CKodiSocket::SockThread(void *arg){
                 {
                     //case EAGAIN:
                     case EWOULDBLOCK:
-                    // Socket is O_NONBLOCK and there is no data available
+
+
                     break;
                     case EINTR:
-                    // an interrupt (signal) has been catched
-                    // should be ingore in most cases
+
                     break;
                     default:
                     Parameters->connected = 0;
                     close(sock);
                     return 0;
-                    // socket has an error, no valid anymore
+
 
                 }
 

@@ -16,6 +16,7 @@
 #include <3ds.h>
 #include <json-c/json.h>
 #include "KodiRPC.hpp"
+#include "Library.hpp"
 
 
 
@@ -36,10 +37,16 @@ public:
     bool runThreads;
 
 
+    bool downloadimages;
+
 
     PrintConsole topScreen, bottomScreen;
 
     CKodiRPC *KodiRPC;
+    CAudioLib *AudioLib;
+    CMovieLib *MovieLib;
+    CTVShowLib *TVShowLib;
+
 
 
 
@@ -49,4 +56,4 @@ public:
 
 
 
-#endif /* Parameters_hpp */
+#endif
