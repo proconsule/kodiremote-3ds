@@ -1,6 +1,6 @@
 <p align="center"><img src="https://i.imgur.com/zfCJmJf.png" width="350" title="kodiremote-3ds-remotemenu">
 <img src="https://i.imgur.com/yXouFqf.png" width="350" title="kodiremote-3ds-movielibbottom">
-<img src="https://i.imgur.com/TLVO2hh.png" width="350" title="kodiremote-3ds-movielibtop"></p>
+<img src="https://i.imgur.com/kL1htX9.png" width="350" title="kodiremote-3ds-movielibtop"></p>
 
 
 kodiremote-3ds is a simple (N)3DS remote control for Kodi (formerly known as XBMC)
