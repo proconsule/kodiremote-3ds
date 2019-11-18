@@ -192,12 +192,12 @@ bool TurboJpegDecompress(MemoryStruct *source,ImageMemoryStruct *dest){
 
 void CMovieLib::CreateFanArtTexture(int movienum){
     if(kodivideolib[movienum].fanartjpegref.size>0){
-        //if(fanartimage.thumbtext.tex != NULL){
+        if(fanartimage.thumbtext.tex != NULL){
             C3D_TexDelete(fanartimage.thumbtext.tex);
             linearFree((Tex3DS_SubTexture *)fanartimage.thumbtext.subtex);
-        //}
+        }
         struct ImageMemoryStruct dest;
-        //JpegDecompress(&chunk,&dest);
+
 
         bool success = TurboJpegDecompress(&kodivideolib[movienum].fanartjpegref,&dest);
         if(success == false){
@@ -224,7 +224,7 @@ void CMovieLib::CreateThumbTexture(int movienum){
             linearFree((Tex3DS_SubTexture *)thumbimage.thumbtext.subtex);
         }
         struct ImageMemoryStruct dest;
-        //JpegDecompress(&chunk,&dest);
+
         bool success = TurboJpegDecompress(&kodivideolib[movienum].jpegref,&dest);
         if(success == false){
             return;
